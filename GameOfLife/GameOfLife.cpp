@@ -6,7 +6,7 @@
 
 constexpr auto ROW = 15;
 constexpr auto COLUMN = 15;
-constexpr auto FILELOC = "G:/JPRO/text.txt";
+constexpr auto FILELOC = "../text.txt";
 
 using namespace std;
 
@@ -25,6 +25,18 @@ void memFree(param** tab) {
 	delete[] tab;
 }
 
+void tempShot(param** tab, int i, int j) {
+	//zmiana temperatury przez użytkownika
+}
+
+void arrMove(param** tab, param** tabNext) {
+	for (int i = 0; i < ROW; i++) {
+		for (int j = 0; j < COLUMN; j++) {
+			tab[i][j].generation = tabNext[i][j].generation;
+		}
+	}
+}
+
 int countNeighbors(param** tab, int i, int j) {
 	int neighbors = 0;
 	if (tab[(ROW + (i - 1)) % ROW][j].generation == 1 || tab[(ROW + (i - 1)) % ROW][j].generation == 2) neighbors++;				//góra
@@ -40,15 +52,30 @@ int countNeighbors(param** tab, int i, int j) {
 }
 
 void nextGen(param** tab, param** tabNext) {
-	bool a, b, c, d, e, f, g, h;
 	int neighbors;
 	for (int i = 0; i < ROW; i++) {
 		for (int j = 0; j < COLUMN; j++) {
 			neighbors = countNeighbors(tab, i, j);
-			if (neighbors != 0) {
+			
+			if (tab[i][j].generation < 2 && neighbors == 3) tabNext[i][j].generation = tab[i][j].generation + 1;
+			else if (tab[i][j].generation > 0 && neighbors != 3) tabNext[i][j].generation = tab[i][j].generation - 1;
+			else if (tab[i][j].generation == 2 && neighbors == 3) {
+				tabNext[(ROW + (i - 1)) % ROW][j].generation = 1;
+				tabNext[(i + 1) % ROW][j].generation = 1;
+				tabNext[i][(COLUMN + (j - 1)) % COLUMN].generation = 1;
+				tabNext[i][(j + 1) % COLUMN].generation = 1;
+				tabNext[(ROW + (i - 1)) % ROW][(COLUMN + (j - 1)) % COLUMN].generation = 1;
+				tabNext[(ROW + (i - 1)) % ROW][(j + 1) % COLUMN].generation = 1;
+				tabNext[(i + 1) % ROW][(COLUMN + (j - 1)) % COLUMN].generation = 1;
+				tabNext[(i + 1) % ROW][(j + 1) % COLUMN].generation = 1;
+			}
+			else tabNext[i][j].generation = tab[i][j].generation;
+			tabNext[i][j].temp = tab[i][j].temp;
+
+			/*if (neighbors != 0) {
 				cout << neighbors << endl;
 				cout << "i = " << i << " j = " << j << endl;
-			}
+			}*/
 		}
 	}
 }
@@ -63,7 +90,8 @@ void nextGen(param** tab, param** tabNext) {
 //	return hline;
 //}
 
-void printArr(param** tab) {
+void printArr(param** tab, int* gennum) {
+	cout << "Generacja: " << *gennum << endl;
 	for (int i = 0; i < ROW; i++) {
 		for (int j = 0; j < COLUMN; j++) {
 			/*if (i == 0 && j == 0) cout << iterate(COLUMN);*/
@@ -73,6 +101,7 @@ void printArr(param** tab) {
 			if (j == COLUMN - 1) cout << endl;
 		}
 	}
+	*gennum += 1;
 }
 
 param** createArray() {
@@ -125,15 +154,23 @@ int main()
 	string filename = FILELOC;
 	param** tab;
 	param** tabNext;
+	char exit = ' ';
+	int gennum = 0;
 
 	tab = createArray();
 	tabNext = createArray();
 
 	readFile(filename, tab);
-	printArr(tab);
+	printArr(tab, &gennum);
 
-	nextGen(tab, tabNext);
-	/*printArr(tabNext);*/
+	while (1) {
+		cin >> exit;
+		if (exit == 'x') break;
+		system("CLS");
+		nextGen(tab, tabNext);
+		printArr(tabNext, &gennum);
+		arrMove(tab, tabNext);
+	}
 
 	memFree(tab);
 	memFree(tabNext);

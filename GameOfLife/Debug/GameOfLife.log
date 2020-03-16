@@ -1,10 +1,2 @@
 ﻿  GameOfLife.cpp
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,7): warning C4101: "a": lokalna zmienna, do której nie istnieje odwołanie
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,19): warning C4101: "e": lokalna zmienna, do której nie istnieje odwołanie
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,10): warning C4101: "b": lokalna zmienna, do której nie istnieje odwołanie
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,22): warning C4101: "f": lokalna zmienna, do której nie istnieje odwołanie
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,13): warning C4101: "c": lokalna zmienna, do której nie istnieje odwołanie
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,28): warning C4101: "h": lokalna zmienna, do której nie istnieje odwołanie
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,25): warning C4101: "g": lokalna zmienna, do której nie istnieje odwołanie
-G:\JPRO\GameOfLife\GameOfLife.cpp(43,16): warning C4101: "d": lokalna zmienna, do której nie istnieje odwołanie
   GameOfLife.vcxproj -> G:\JPRO\GameOfLife\Debug\GameOfLife.exe
