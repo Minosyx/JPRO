@@ -6,25 +6,18 @@
 #include <sstream>
 #include <cmath>
 
-//constexpr auto row = 15;
-//constexpr auto column = 15;
-//constexpr auto temp = 26;
-constexpr auto FILELOC = "../text.txt";
+constexpr auto FILELOC = "./text.txt";
 
 using namespace std;
-
-int row, column;
-double temp;
 
 struct parameters {
 	int generation;
 	double temp;
-	/*int food_count;*/
 };
 
 typedef struct parameters param;
 
-param** createArray() {
+param** createArray(const int &row, const int &column) {
 	param** tab;
 	tab = new param * [row];
 	for (int i = 0; i < row; i++) {
@@ -33,7 +26,15 @@ param** createArray() {
 	return tab;
 }
 
-void arrMove(param** tab, param** tabNext) {
+param** cCreateArray(const int &row, const int &column) {
+	param **tab = (param**)malloc(sizeof(param*) * row);
+	for (int i = 0; i < row; i++) {
+		tab[i] = (param*)malloc(sizeof(param) * column);
+	}
+	return tab;
+}
+
+void arrMove(param** tab, param** tabNext, const int &row, const int &column) { // podmiana tablic po wygenerowaniu nowej generacji
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < column; j++) {
 			tab[i][j] = tabNext[i][j];
@@ -41,14 +42,21 @@ void arrMove(param** tab, param** tabNext) {
 	}
 }
 
-void memFree(param** tab) {
+void memFree(param** tab, const int &row) {
 	for (int j = 0; j < row; j++) {
 		delete[] tab[j];
 	}
 	delete[] tab;
 }
 
-void writeToFile(param** tab, int &gennum) {
+void cMemFree(param** tab, const int &row) {
+	for (int j = 0; j < row; j++) {
+		free(tab[j]);
+	}
+	free(tab);
+}
+
+void writeToFile(param** tab, int &gennum, const int &row, const int &column) { // zapisa aktualnej generacji do pliku
 	int i, j;
 	int inserted;
 	
@@ -68,7 +76,7 @@ void writeToFile(param** tab, int &gennum) {
 	fclose(fp);
 }
 
-void gridCheck(param** tab) {
+void gridCheck(param** tab) { // odczyt danych komórki
 	int x, y;
 	
 	cout << "Podaj wspolrzedne komorki, ktorej dane chcesz sprawdzic" << endl;
@@ -82,12 +90,17 @@ void gridCheck(param** tab) {
 	cout << "Temperatura: " << tab[x][y].temp << endl;
 }
 
-void evenSpread(param** tab, double ctemp, int x, int y) {
+void evenSpread(param** tab, double ctemp, int x, int y, const int &row, const int &column) {
 	int i, j = 1;
 	double sctemp = ctemp;
 	tab[x][y].temp += ctemp;
 	if (tab[x][y].generation != 0) ctemp = ctemp - ctemp * 0.3;
 	else ctemp = ctemp - ctemp * 0.1;
+
+	/* 
+	Dzielę grid na cztery części i poruszam się od wskazanego punktu do zewnątrz. 
+	Zmiana temperatury zależy od tego czy w iteracji wcześniej istnieje żywa bakteria.
+	*/
 
 	i = x - 1;
 	while (i >= 0) {
@@ -95,14 +108,12 @@ void evenSpread(param** tab, double ctemp, int x, int y) {
 		int k = y - j;
 		int len = y + j;
 		if (k < 0) k = 0;
-		if (len == column) len = column - 1;
+		if (len >= column) len = column - 1;
 		while (k <= len) {
 			tab[i][k].temp += ctemp;
 			if (tab[i][k].generation != 0) counter++;
-			/*printf("i = %d, k = %d\n", i, k);*/
 			k++;
 		}
-		printf("counter = %d\n", counter);
 		if (counter > 0) ctemp = ctemp - ctemp * 0.3;
 		else ctemp = ctemp - ctemp * 0.1;
 		j++;
@@ -117,11 +128,10 @@ void evenSpread(param** tab, double ctemp, int x, int y) {
 		int k = y - j;
 		int len = y + j;
 		if (k < 0) k = 0;
-		if (len == column) len = column - 1;
+		if (len >= column) len = column - 1;
 		while (k <= len) {
 			tab[i][k].temp += ctemp;
 			if (tab[i][k].generation != 0) counter++;
-			/*printf("i = %d, k = %d\n", i, k);*/
 			k++;
 		}
 		if (counter > 0) ctemp = ctemp - ctemp * 0.3;
@@ -138,7 +148,7 @@ void evenSpread(param** tab, double ctemp, int x, int y) {
 		int k = x - j;
 		int len = x + j;
 		if (k < 0) k = 0;
-		if (len == row) len = row - 1;
+		if (len >= row) len = row - 1;
 		while (k <= len) {
 			tab[k][i].temp += ctemp;
 			if (tab[k][i].generation != 0) counter++;;
@@ -158,7 +168,7 @@ void evenSpread(param** tab, double ctemp, int x, int y) {
 		int k = x - j;
 		int len = x + j;
 		if (k < 0) k = 0;
-		if (len == row) len = row - 1;
+		if (len >= row) len = row - 1;
 		while (k <= len) {
 			tab[k][i].temp += ctemp;
 			if (tab[k][i].generation != 0) counter++;;
@@ -171,7 +181,7 @@ void evenSpread(param** tab, double ctemp, int x, int y) {
 	}
 }
 
-void directionalSpread(param** tab, double ctemp, int x, int y) { 
+void directionalSpread(param** tab, double ctemp, int x, int y, const int &row, const int &column) {
 	int choice;
 	double ctempPlus;
 	double ctempMinus;
@@ -185,6 +195,11 @@ void directionalSpread(param** tab, double ctemp, int x, int y) {
 	else ctemp = ctemp - ctemp * 0.1;
 	ctempPlus = ctemp;
 	ctempMinus = ctemp;
+
+	/*
+	Zmiana temperatury w podanej linii. Zaczynamy od podanego punktu, a w następnej iteracji linia rozszerza się do 3 pól.
+	Wartość o jaką zmienia się temperatura zależy od tego czy komórka wcześniej była żywa.
+	*/
 
 	switch (choice) {
 	case 1:
@@ -251,7 +266,7 @@ void directionalSpread(param** tab, double ctemp, int x, int y) {
 
 }
 
-void tempShot(param** tab) {
+void tempShot(param** tab, const int &row, const int &column) { // funkcja wywołująca strzał temperaturą
 	int tchoice, x, y;
 	double ctemp;
 	cout << "Podaj rodzaj rozchodzenia sie temperatury (rownomierna = 1, kierunkowa = 2): ";
@@ -267,10 +282,10 @@ void tempShot(param** tab) {
 
 	switch (tchoice) {
 	case 1: 
-		evenSpread(tab, ctemp, x, y);
+		evenSpread(tab, ctemp, x, y, row, column);
 		break;
 	case 2:
-		directionalSpread(tab, ctemp, x, y);
+		directionalSpread(tab, ctemp, x, y, row, column);
 		break;
 	default: 
 		cout << "Dokonano niepoprawnego wyboru" << endl;
@@ -278,7 +293,7 @@ void tempShot(param** tab) {
 
 }
 
-int countNeighbors(param** tab, int i, int j) {
+int countNeighbors(param** tab, int i, int j, const int &row, const int &column) { // funkcja zliczająca ilość żywych sąsiadów komórki
 	int neighbors = 0;
 	if (tab[(row + (i - 1)) % row][j].generation == 1 || tab[(row + (i - 1)) % row][j].generation == 2) neighbors++;				//góra
 	if (tab[(i + 1) % row][j].generation == 1 || tab[(i + 1) % row][j].generation == 2) neighbors++;								//dół
@@ -292,15 +307,27 @@ int countNeighbors(param** tab, int i, int j) {
 	return neighbors;
 }
 
-void nextGen(param** tab, param** tabNext) {
+void nextGen(param** tab, param** tabNext, const int &row, const int &column, const double &temperature) {
 	int neighbors;
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < column; j++) {
-			neighbors = countNeighbors(tab, i, j);
-			
-			if (tab[i][j].generation < 2 && neighbors == 3) tabNext[i][j].generation = tab[i][j].generation + 1;
-			else if (tab[i][j].generation > 0 && neighbors != 3) tabNext[i][j].generation = tab[i][j].generation - 1;
-			else if (tab[i][j].generation == 2 && (neighbors == 3 || neighbors == 2)) {
+			/*
+			Generowanie następnego pokolenia na podstawie temperatury i ilości żywych sąsiadów
+			*/
+			neighbors = countNeighbors(tab, i, j, row, column);
+
+			if (tab[i][j].generation == 2 && tab[i][j].temp > temperature + temperature * 0.4) {
+				tabNext[(row + (i - 1)) % row][j].generation = 2;
+				tabNext[(i + 1) % row][j].generation = 2;
+				tabNext[i][(column + (j - 1)) % column].generation = 2;
+				tabNext[i][(j + 1) % column].generation = 2;
+				tabNext[(row + (i - 1)) % row][(column + (j - 1)) % column].generation = 1;
+				tabNext[(row + (i - 1)) % row][(j + 1) % column].generation = 1;
+				tabNext[(i + 1) % row][(column + (j - 1)) % column].generation = 1;
+				tabNext[(i + 1) % row][(j + 1) % column].generation = 1;
+				tabNext[i][j].generation = tab[i][j].generation;
+			}
+			else if (tab[i][j].generation == 2 && (tab[i][j].temp < temperature + temperature * 0.4 && tab[i][j].temp > temperature - temperature * 0.4)) {
 				tabNext[(row + (i - 1)) % row][j].generation = 1;
 				tabNext[(i + 1) % row][j].generation = 1;
 				tabNext[i][(column + (j - 1)) % column].generation = 1;
@@ -309,15 +336,29 @@ void nextGen(param** tab, param** tabNext) {
 				tabNext[(row + (i - 1)) % row][(j + 1) % column].generation = 1;
 				tabNext[(i + 1) % row][(column + (j - 1)) % column].generation = 1;
 				tabNext[(i + 1) % row][(j + 1) % column].generation = 1;
-				tabNext[i][j].generation = 0; // temporary
+				tabNext[i][j].generation = 0;
 			}
-			else tabNext[i][j].generation = tab[i][j].generation;
-			tabNext[i][j].temp = tab[i][j].temp;
+			else if (tab[i][j].generation == 2 && tab[i][j].temp < temperature - temperature * 0.4) {
+				tabNext[(row + (i - 1)) % row][j].generation = (tab[(row + (i - 1)) % row][j].generation == 0) ? 0 : (tab[(row + (i - 1)) % row][j].generation - 1);
+				tabNext[(i + 1) % row][j].generation = (tab[(i + 1) % row][j].generation == 0) ? 0 : (tab[(i + 1) % row][j].generation - 1);
+				tabNext[i][(column + (j - 1)) % column].generation = (tab[i][(column + (j - 1)) % column].generation == 0) ? 0 : (tab[i][(column + (j - 1)) % column].generation - 1);
+				tabNext[i][(j + 1) % column].generation = (tab[i][(j + 1) % column].generation == 0) ? 0 : (tab[i][(j + 1) % column].generation - 1);
+				tabNext[i][j].generation = tab[i][j].generation - 1;
+			}
+			else if (tab[i][j].generation < 2 && tab[i][j].temp > temperature + temperature * 0.4) tabNext[i][j].generation = tab[i][j].generation + 1;
+			else if ((tab[i][j].generation < 2 && tab[i][j].generation > 0) && tab[i][j].temp < temperature - temperature * 0.4) tabNext[i][j].generation = tab[i][j].generation - 1;
+			else if (tab[i][j].generation == 0 && tab[i][j].temp < temperature - temperature * 0.4) tabNext[i][j].generation = tab[i][j].generation;
+			else if (tab[i][j].generation < 2 && (tab[i][j].temp < temperature + temperature * 0.4 && tab[i][j].temp > temperature - temperature * 0.4 && neighbors < 3)) tabNext[i][j].generation = tab[i][j].generation;
+			else if (tab[i][j].generation < 2 && (tab[i][j].temp < temperature + temperature * 0.4 && tab[i][j].temp > temperature - temperature * 0.4 && (neighbors >= 3 && neighbors <= 6))) tabNext[i][j].generation = tab[i][j].generation + 1;
+			else if (tab[i][j].generation < 2 && (tab[i][j].temp < temperature + temperature * 0.4 && tab[i][j].temp > temperature - temperature * 0.4 && neighbors >= 6))
+				tabNext[i][j].generation = tab[i][j].generation == 0 ? 0 : tab[i][j].generation - 1;
 
-			/*if (i == 7 && j == 5) { // debugowanie
-				cout << neighbors << endl;
-				cout << "i = " << i << " j = " << j << endl;
-			}*/
+			else tabNext[i][j].generation = tab[i][j].generation;
+			if (tab[i][j].temp > temperature)
+				tabNext[i][j].temp = tab[i][j].temp - fabs(tab[i][j].temp - temperature) * 0.1;
+			else if (tab[i][j].temp < temperature)
+				tabNext[i][j].temp = tab[i][j].temp + fabs(tab[i][j].temp - temperature) * 0.1;
+			else tabNext[i][j].temp = tab[i][j].temp;
 		}
 	}
 }
@@ -336,7 +377,7 @@ string iterate(int number) { //	opisanie kolumn
 	return hline;
 }
 
-string createSpacer(int number) { // tworzenie dynamicznych przerw do zachowania wygladu gridu
+string createSpacer(int number) { // tworzenie przerw do zachowania wygladu gridu
 	string spacer = "";
 	stringstream ss;
 
@@ -347,10 +388,10 @@ string createSpacer(int number) { // tworzenie dynamicznych przerw do zachowania
 	return spacer;
 }
 
-void printArr(param** tab, int &gennum) {
+void printArr(param** tab, int &gennum, const int &row, const int &column) { // wypisanie tablicy na w konsoli
 	int counter = 0;
 	int crow;
-	crow = (int)ceil(log10(row + 1));
+	crow = (int)ceil(log10(row + 1));	// obliczanie ilości znaków potrzebnych, by zapisać numer wiersza przy gridzie
 
 	cout << "Generacja: " << gennum << endl;
 	for (int i = 0; i < row; i++) {
@@ -374,28 +415,22 @@ void printArr(param** tab, int &gennum) {
 			}
 			else if (tab[i][j].generation == 2) {
 				cout << char(178);
+				counter++;
 
 			}
 			if (j == column - 1) cout << endl;
 		}
 	}
 	gennum += 1;
-	if (counter == 0) {
+	if (counter == 0) { // Zakończenie programu jeśli ilość żywych komórek wynosi 0
 		cout << "Brawo! Udalo ci sie powstrzymac rozwoj bakterii." << endl;
-		cout << "Nacisnij dowolny klawisz aby wyjsc z programu" << endl;
-		getchar();
+		cout << "Nacisnij klawisz ENTER aby wyjsc z programu" << endl;
 		getchar();
 		exit(0);
 	}
-
-	/*for (int i = 0; i < row; i++) { // debugowanie
-		for (int j = 0; j < column; j++) {
-			printf("[%d][%d].gen = %d\n", i, j, tab[i][j].generation);
-		}
-	}*/
 }
 
-void readFile(string filename, param** tab) {
+void readFile(string filename, param** tab, const int &column, const double &temperature) { // wczytanie gridu z pliku i zapisanie go do tablicy
 	char c;
 	int ic; // zmienna pomocnicza do zamiany char na int
 	ifstream file(filename);
@@ -404,7 +439,7 @@ void readFile(string filename, param** tab) {
 		while (file >> c) {
 			ic = c - '0';
 			tab[i][j].generation = ic;
-			tab[i][j].temp = temp;
+			tab[i][j].temp = temperature;
 			if (j == column - 1) {
 				i++;
 				j = 0;
@@ -415,20 +450,8 @@ void readFile(string filename, param** tab) {
 	file.close();
 }
 
-void centerString(const char* s, int console_width)
-{
-	int l = strlen(s);
-	int pos = (int)((console_width - l) / 2);
-	for (int i = 0; i < pos; i++)
-		cout << " ";
-	cout << s;
-	cout << endl;
-}
-
-void printMenu(int console_width) {
-	centerString("1. Wybierz uzytkownika", console_width);
-	centerString("2. O programie", console_width);
-	centerString("3. Wyjdz", console_width);
+void printChoice() {
+	cout << "Podaj opcje: ";
 }
 
 void printOptions() {
@@ -438,15 +461,17 @@ void printOptions() {
 	cout << "3. Stworz nowa generacje" << endl;
 	cout << "4. Zapisz generacje do pliku" << endl;
 	cout << "x. Wyjdz z programu" << endl;
-	cout << "Podaj opcje: ";
+	printChoice();
 }
 
 int main()
 {
+	int row, column;
+	double temperature;
 	string filename = FILELOC;
 	param** tab;
 	param** tabNext;
-	char choice = ' ';
+	string choice = "";
 	int gennum = 0;
 	int is_active = 1;
 
@@ -454,69 +479,64 @@ int main()
 	cin >> row;
 	cout << "Podaj ilosc kolumn siatki do gry: ";
 	cin >> column;
-	cout << "Podaj poczatkowa temperature dla bakterii: ";
-	cin >> temp;
+	cout << "Podaj poczatkowa temperature dla bakterii (stan rownowagi): ";
+	cin >> temperature;
 	
 	system("CLS");
 
-	tab = createArray();
-	tabNext = createArray();
+	tab = cCreateArray(row, column);
+	if (!tab) {
+		return -1;
+	}
+	tabNext = cCreateArray(row, column);
+	if (!tabNext) {
+		return -1;
+	}
 
-	readFile(filename, tab);
-	printArr(tab, gennum);
+	readFile(filename, tab, column, temperature);
+	printArr(tab, gennum, row, column);
 
 	FILE* fp = fopen("./generations.txt", "w");
-	fclose(fp);
+	fclose(fp);		// czyszczenie pliku z zapisanymi generacjami przy uruchomieniu programu po uprzednim jego zamknięciu
 
-	while (is_active) {
+	while (is_active) { // menu
 		printOptions();
 		option:
 		cin >> choice;
-		switch (choice) {
+		switch (choice[0]) {
 		case 'x':
 			is_active = 0;
 			break;
 		case '1':
-			tempShot(tab);
+			tempShot(tab, row, column);
 			break;
 		case '2':
 			gridCheck(tab);
-			cout << "Podaj opcje: ";
+			printChoice();
 			goto option;
 		case '3':
 			break;
 		case '4':
-			writeToFile(tab, gennum);
-			cout << "Podaj opcje: ";
+			writeToFile(tab, gennum, row, column);
+			printChoice();
+			goto option;
+		default:
+			cout << "Wybrana opcja jest niepoprawna!\n";
+			printChoice();
 			goto option;
 		}
 		if (is_active) {
-			cout << "Nacisnij dowolny klawisz by przejsc dalej" << endl;
+			cout << "Nacisnij klawisz ENTER by przejsc dalej" << endl;
 			getchar();
 			getchar();
 			system("CLS");
-			nextGen(tab, tabNext);
-			printArr(tabNext, gennum);
-			arrMove(tab, tabNext);
+			nextGen(tab, tabNext, row, column, temperature);
+			printArr(tabNext, gennum, row, column);
+			arrMove(tab, tabNext, row, column);
 		}
 	}
 
-	memFree(tab);
-	memFree(tabNext);
-
-
-	/*int choice;
-	int console_width = 120;
-	printMenu(console_width);
-	cin >> choice;
-	system("CLS");
-	switch (choice) {
-	case 1:	cout << "Wybrales 1 opcje" << endl;
-		break;
-	case 2: cout << "Wybrales 2 opcje" << endl;
-		break;
-	case 3: cout << "Do widzenia" << endl;
-		choice(0);
-	}*/
+	cMemFree(tab, row);
+	cMemFree(tabNext, row);
 }
 
