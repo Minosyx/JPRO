@@ -56,7 +56,7 @@ void cMemFree(param** tab, const int &row) {
 	free(tab);
 }
 
-void writeToFile(param** tab, int &gennum, const int &row, const int &column) { // zapisa aktualnej generacji do pliku
+void writeToFile(param** tab, int &gennum, const int &row, const int &column) { // zapisanie aktualnej generacji do pliku
 	int i, j;
 	int inserted;
 	
