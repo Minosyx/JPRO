@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <ctime>
 
 constexpr auto FILELOC = "./text.txt";
 
@@ -56,6 +57,11 @@ void cMemFree(param** tab, const int &row) {
 	free(tab);
 }
 
+int genRand() {
+	int num = rand() % 3;
+	return num;
+}
+
 void writeToFile(param** tab, int &gennum, const int &row, const int &column) { // zapisanie aktualnej generacji do pliku
 	int i, j;
 	int inserted;
@@ -76,15 +82,34 @@ void writeToFile(param** tab, int &gennum, const int &row, const int &column) { 
 	fclose(fp);
 }
 
-void gridCheck(param** tab) { // odczyt danych komórki
+void gridCheck(param** tab, const int &row, const int &column) { // odczyt danych komórki
 	int x, y;
 	
 	cout << "Podaj wspolrzedne komorki, ktorej dane chcesz sprawdzic" << endl;
-	cout << "Wiersz: ";
-	cin >> x;
-	cout << "Kolumna: ";
-	cin >> y;
 
+	while (1) {
+		cout << "Wiersz: ";
+		if (cin >> x && x < row && x >= 0) {
+			break;
+		}
+		else {
+			cout << "	Podaj poprawna liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+
+	while (1) {
+		cout << "Kolumna: ";
+		if (cin >> y && y < column && y >= 0) {
+			break;
+		}
+		else {
+			cout << "	Podaj poprawna liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
 	cout << "Dane komorki [" << x << "][" << y << "] to:" << endl;
 	cout << "Generacja: " << tab[x][y].generation << endl;
 	cout << "Temperatura: " << tab[x][y].temp << endl;
@@ -185,11 +210,21 @@ void directionalSpread(param** tab, double ctemp, int x, int y, const int &row, 
 	int choice;
 	double ctempPlus;
 	double ctempMinus;
-	cout << "Wybierz kierunek:" << endl;
-	cout << "1. Gora\n2. Dol\n3. Lewo\n4. Prawo" << endl;
-	cout << "Twoj wybor: ";
-	cin >> choice;
 
+	while (1) {
+		cout << "Wybierz kierunek:" << endl;
+		cout << "1. Gora\n2. Dol\n3. Lewo\n4. Prawo" << endl;
+		cout << "Twoj wybor: ";
+		if (cin >> choice && (choice == 1 || choice == 2 || choice == 3 || choice == 4)) {
+			break;
+		}
+		else {
+			cout << "	Dokonano niepoprawnego wyboru!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+	
 	tab[x][y].temp += ctemp;
 	if (tab[x][y].generation != 0) ctemp = ctemp - ctemp * 0.3;
 	else ctemp = ctemp - ctemp * 0.1;
@@ -269,16 +304,55 @@ void directionalSpread(param** tab, double ctemp, int x, int y, const int &row, 
 void tempShot(param** tab, const int &row, const int &column) { // funkcja wywołująca strzał temperaturą
 	int tchoice, x, y;
 	double ctemp;
-	cout << "Podaj rodzaj rozchodzenia sie temperatury (rownomierna = 1, kierunkowa = 2): ";
-	cin >> tchoice;
-	cout << "Podaj wspolrzedne z siatki" << endl;
-	cout << "Wiersz: ";
-	cin >> x;
-	cout << "Kolumna: ";
-	cin >> y;
 
-	cout << "Podaj o ile zmienic temperature tej komorki: ";
-	cin >> ctemp;
+	while (1) {
+		cout << "Podaj rodzaj rozchodzenia sie temperatury (rownomierna = 1, kierunkowa = 2): ";
+		if (cin >> tchoice && (tchoice == 1 || tchoice == 2)) {
+			break;
+		}
+		else {
+			cout << "	Dokonano niepoprawnego wyboru!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+
+	cout << "Podaj wspolrzedne z siatki" << endl;
+	while (1) {
+		cout << "Wiersz: ";
+		if (cin >> x && x < row && x >= 0) {
+			break;
+		}
+		else {
+			cout << "	Podaj poprawna liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+
+	while (1) {
+		cout << "Kolumna: ";
+		if (cin >> y && y < column && y >= 0) {
+			break;
+		}
+		else {
+			cout << "	Podaj poprawna liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+
+	while (1) {
+		cout << "Podaj o ile zmienic temperature tej komorki: ";
+		if (cin >> ctemp) {
+			break;
+		}
+		else {
+			cout << "	Podaj liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
 
 	switch (tchoice) {
 	case 1: 
@@ -290,7 +364,6 @@ void tempShot(param** tab, const int &row, const int &column) { // funkcja wywo�
 	default: 
 		cout << "Dokonano niepoprawnego wyboru" << endl;
 	}
-
 }
 
 int countNeighbors(param** tab, int i, int j, const int &row, const int &column) { // funkcja zliczająca ilość żywych sąsiadów komórki
@@ -388,7 +461,7 @@ string createSpacer(int number) { // tworzenie przerw do zachowania wygladu grid
 	return spacer;
 }
 
-void printArr(param** tab, int &gennum, const int &row, const int &column) { // wypisanie tablicy na w konsoli
+void printArr(param** tab, int &gennum, const int &row, const int &column) { // wypisanie tablicy w konsoli
 	int counter = 0;
 	int crow;
 	crow = (int)ceil(log10(row + 1));	// obliczanie ilości znaków potrzebnych, by zapisać numer wiersza przy gridzie
@@ -430,6 +503,17 @@ void printArr(param** tab, int &gennum, const int &row, const int &column) { // 
 	}
 }
 
+void randomSeed(param** tab, const int& column, const int& row, const double& temperature) {
+	int num, i, j;
+	for (i = 0; i < row; i++) {
+		for (j = 0; j < column; j++) {
+			num = genRand();
+			tab[i][j].generation = num;
+			tab[i][j].temp = temperature;
+		}
+	}
+}
+
 void readFile(string filename, param** tab, const int &column, const double &temperature) { // wczytanie gridu z pliku i zapisanie go do tablicy
 	char c;
 	int ic; // zmienna pomocnicza do zamiany char na int
@@ -451,7 +535,7 @@ void readFile(string filename, param** tab, const int &column, const double &tem
 }
 
 void printChoice() {
-	cout << "Podaj opcje: ";
+	cout << endl << "Podaj opcje: ";
 }
 
 void printOptions() {
@@ -466,6 +550,7 @@ void printOptions() {
 
 int main()
 {
+	srand(time(NULL));
 	int row, column;
 	double temperature;
 	string filename = FILELOC;
@@ -474,26 +559,76 @@ int main()
 	string choice = "";
 	int gennum = 0;
 	int is_active = 1;
+	int startGen = 0;
 
-	cout << "Podaj ilosc wierszy siatki do gry: ";
-	cin >> row;
-	cout << "Podaj ilosc kolumn siatki do gry: ";
-	cin >> column;
-	cout << "Podaj poczatkowa temperature dla bakterii (stan rownowagi): ";
-	cin >> temperature;
+	while (1) {
+		cout << "Podaj ilosc wierszy siatki do gry: ";
+		if (cin >> row) {
+			break;
+		}
+		else {
+			cout << "	Podaj liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+
+	while (1) {
+		cout << "Podaj ilosc kolumn siatki do gry: ";
+		if (cin >> column) {
+			break;
+		}
+		else {
+			cout << "	Podaj liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+
+	while (1) {
+		cout << "Podaj poczatkowa temperature dla bakterii (stan rownowagi): ";
+		if (cin >> temperature) {
+			break;
+		}
+		else {
+			cout << "	Podaj liczbe!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
 	
 	system("CLS");
 
 	tab = cCreateArray(row, column);
-	if (!tab) {
+	if (tab == NULL) {
 		return -1;
 	}
 	tabNext = cCreateArray(row, column);
-	if (!tabNext) {
+	if (tabNext == NULL) {
 		return -1;
 	}
 
-	readFile(filename, tab, column, temperature);
+	while (1) {
+		cout << "Jak utworzyc generacje startowa?" << endl << "1. Wczytac z pliku" << endl << "2. Wygenerowac losowo" << endl;
+		cout << "Podaj wybor: ";
+		if (cin >> startGen && (startGen == 1 || startGen == 2)) {
+			break;
+		}
+		else {
+			system("CLS");
+			cout << "	Dokonano niepoprawnego wyboru!!!" << endl;
+			cin.clear();
+			while (cin.get() != '\n');
+		}
+	}
+
+	system("CLS");
+
+	if (startGen == 1)
+		readFile(filename, tab, column, temperature);
+	else if (startGen == 2)
+		randomSeed(tab, column, row, temperature);
+	
 	printArr(tab, gennum, row, column);
 
 	FILE* fp = fopen("./generations.txt", "w");
@@ -511,7 +646,7 @@ int main()
 			tempShot(tab, row, column);
 			break;
 		case '2':
-			gridCheck(tab);
+			gridCheck(tab, row, column);
 			printChoice();
 			goto option;
 		case '3':
